@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class of 2022 Memories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">Class of 2022</div>
+        <ul class="nav-menu">
+            <li><a href="#memories">📸 Memories</a></li>
+            <li><a href="#stars">⭐ Stars</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <video autoplay muted loop playsinline class="hero-video">
+            <source src="video.mp4" type="video/mp4">
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>Class of 2022</h1>
+            <p>Relive the moments</p>
+            <div class="hero-buttons">
+                <a href="#memories" class="cta-button primary">📸 Memories</a>
+                <a href="#stars" class="cta-button secondary">⭐ Stars</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Memories First -->
+    <section id="memories" class="memories">
+        <div class="container">
+            <div class="section-header">
+                <h2>📸 Our Memories</h2>
+                <button class="upload-btn" id="memoriesUploadBtn">➕ Add Memory</button>
+            </div>
+            <div class="memory-folders" id="memoryFolders"></div>
+        </div>
+    </section>
+
+    <!-- Stars Second -->
+    <section id="stars" class="stars-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>⭐ Class Stars</h2>
+                <button class="add-student-btn" id="addStudentTrigger">➕ Add Star</button>
+            </div>
+            <div class="stars-grid" id="starsGrid"></div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>Class of 2022 Memories Album © 2024</p>
+    </footer>
+
+    <!-- Memory Upload Modal -->
+    <div id="uploadModal" class="upload-modal" style="display:none;">
+        <div class="upload-modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>📸 Add New Memory</h3>
+            <form id="uploadForm">
+                <label>Year
+                    <select id="memoryYear" required>
+                        <option value="">Select Year</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </label>
+                <label>Caption
+                    <input type="text" id="photoCaption" placeholder="What's special about this memory?" required>
+                </label>
+                <label>File
+                    <input type="file" id="photoFile" accept="image/*,video/*" required>
+                    <small id="photoFileName">Choose photo or video</small>
+                </label>
+                <button type="submit" class="submit-btn">Save Memory</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stars Modal -->
+    <div id="studentModal" class="student-modal" style="display:none;">
+        <div class="student-modal-content">
+            <span class="close-student-modal">&times;</span>
+            <h3>⭐ Add Class Star</h3>
+            <form id="studentForm">
+                <label>Student Name
+                    <input type="text" id="studentName" placeholder="Full name" required>
+                </label>
+                <label>Photo (optional)
+                    <input type="file" id="studentPhoto" accept="image/*">
+                    <small id="studentFileName">Beautiful auto-avatar created if no photo</small>
+                </label>
+                <button type="submit" class="submit-btn">Add Star ✨</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
