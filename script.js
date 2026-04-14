@@ -24,21 +24,44 @@ document.addEventListener('DOMContentLoaded', function () {
   const fileName = document.getElementById('photoFileName');
   const memoryFolders = document.getElementById('memoryFolders');
   
-  const years = ['2022', '2023', '2024', '2025', '2026', '2027', '2028'];
+const years = ['2022', '2023', '2024', '2025', '2026'];
 
-  function getFileData(filename) {
+  async function getMemories() {
     try {
-      const dataStr = localStorage.getItem(filename.replace('.json', ''));
-      return dataStr ? JSON.parse(dataStr) : [];
+      const response = await fetch('permanent-gallery.json');
+      const dataStr = await response.text();
+      return JSON.parse(dataStr);
     } catch {
-      return [];
+      try {
+        const localData = localStorage.getItem('permanent-gallery');
+        return localData ? JSON.parse(localData) : [];
+      } catch {
+        return [];
+      }
     }
   }
 
-  function saveToFile(filename, item) {
-    const items = getFileData(filename);
-    items.push(item);
-    localStorage.setItem(filename.replace('.json', ''), JSON.stringify(items));
+  async function downloadMemories() {
+    const memories = await getMemories();
+    const dataStr = JSON.stringify(memories, null, 2);
+    const blob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `permanent-gallery-${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function saveMemory(item) {
+    try {
+      let memories = await getMemories();
+      memories.push(item);
+      localStorage.setItem('permanent-gallery', JSON.stringify(memories));
+      await downloadMemories();
+    } catch(e) {
+      console.warn('Save failed:', e);
+    }
   }
 
   function createYearFolders() {
@@ -85,8 +108,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  function loadMemories() {
-    const saved = getFileData('permanent-gallery.json');
+  async function loadMemories() {
+    const saved = await getMemories();
     saved.forEach(createMemoryItem);
   }
 
@@ -98,16 +121,17 @@ document.addEventListener('DOMContentLoaded', function () {
         modal = document.createElement('div');
         modal.id = 'uploadModal';
         modal.className = 'upload-modal';
-        modal.innerHTML = `
+        let html = `
           <div class="upload-modal-content">
             <span class="close-modal">&times;</span>
             <h3>Add Memory 📸</h3>
             <form id="uploadForm">
               <label>Year
-                <select id="memoryYear">
-                  <option value="2022">2022</option>
-                  <option value="2023">2023</option>
-                  <option value="2024">2024</option>
+                <select id="memoryYear">`;
+        for(let y of years) {
+          html += `<option value="${y}">${y}</option>`;
+        }
+        html += `
                 </select>
               </label>
               <label>Caption
@@ -119,13 +143,14 @@ document.addEventListener('DOMContentLoaded', function () {
               </label>
               <button type="submit" class="submit-btn">Save Memory</button>
             </form>
-          </div>
-        `;
+          </div>`;
+        modal.innerHTML = html;
         document.body.appendChild(modal);
       }
       modal.style.display = 'flex';
     });
   }
+
 
   // Upload form handling
   document.addEventListener('change', (e) => {
@@ -148,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
       reader.onload = function(event) {
         const item = { year, type, caption, dataUrl: event.target.result };
         createMemoryItem(item);
-        saveToFile('permanent-gallery.json', item);
+        saveMemory(item);
         uploadModal.style.display = 'none';
         e.target.reset();
       };
@@ -166,6 +191,13 @@ document.addEventListener('DOMContentLoaded', function () {
   createYearFolders();
   loadMemories();
 
+  // Memories download button
+  const memoriesDownloadBtn = document.createElement('button');
+  memoriesDownloadBtn.textContent = 'Download Memories (Permanent Save)';
+  memoriesDownloadBtn.onclick = downloadMemories;
+  memoriesDownloadBtn.className = 'download-btn';
+  memoryFolders.parentNode.insertBefore(memoriesDownloadBtn, memoryFolders);
+
   // Stars functionality
   const addStudentTrigger = document.getElementById('addStudentTrigger');
   const studentModal = document.getElementById('studentModal');
@@ -176,24 +208,69 @@ document.addEventListener('DOMContentLoaded', function () {
   const studentFileName = document.getElementById('studentFileName');
   const starsGrid = document.getElementById('starsGrid');
 
-function getStars() {
-    const raw = localStorage.getItem('classStars') || JSON.stringify([
-      {"name":"Demo Star 1","photoUrl":"https://ui-avatars.com/api/?name=D1&size=256&background=6a0dad&color=fff"},
-      {"name":"Demo Star 2","photoUrl":"https://ui-avatars.com/api/?name=D2&size=256&background=6a0dad&color=fff"},
-      {"name":"Demo Star 3","photoUrl":"https://ui-avatars.com/api/?name=D3&size=256&background=6a0dad&color=fff"}
-    ]);
+async function loadDemoIfNeeded() {
     try {
-      return JSON.parse(raw);
+      const demoText = await (await fetch('stars-demo.json')).text();
+      const demo = JSON.parse(demoText);
+      try {
+        let stars = JSON.parse(localStorage.getItem('classStars') || '[]');
+        localStorage.setItem('classStars', JSON.stringify([...new Set([...demo, ...stars])].slice(-50)));
+      } catch(quota) {
+        console.warn('Quota full, skipping demo merge');
+      }
+    } catch(e) {
+      console.warn('Demo load failed', e);
+    }
+  }
+
+async function getStars() {
+    try {
+      const localData = localStorage.getItem('students');
+      if (localData) return JSON.parse(localData);
+      const response = await fetch('students.json');
+      const dataStr = await response.text();
+      return JSON.parse(dataStr);
     } catch {
       return [];
     }
   }
 
-  function saveStar(star) {
-    let stars = getStars();
-    stars.push(star);
-    localStorage.setItem('classStars', JSON.stringify(stars.slice(-50)));
-    loadStars();
+// Removed duplicate loadDemoIfNeeded function
+
+async function saveStar(star) {
+    try {
+      let stars = await getStars();  // Always load fresh from file first
+      stars.push(star);
+      // Don't use localStorage - rely on file persistence only
+      await downloadStudents();  // Auto-save to permanent students.json
+      await loadStars();
+    } catch(e) {
+      console.warn('Save failed:', e);
+    }
+  }
+
+async function downloadStudents() {
+    const stars = await getStars();
+    const dataStr = JSON.stringify(stars, null, 2);
+    const blob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `students-${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+async function downloadStars() {
+    const stars = JSON.parse(localStorage.getItem('classStars') || '[]');
+    const dataStr = JSON.stringify(stars, null, 2);
+    const blob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `class-stars-${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   function createStarCard(star) {
@@ -206,18 +283,19 @@ function getStars() {
     starsGrid.appendChild(card);
   }
 
-  function loadStars() {
+async function loadStars() {
     starsGrid.innerHTML = '';
-    getStars().forEach(createStarCard);
+    const stars = await getStars();
+    stars.forEach(createStarCard);
   }
 
-  // Demo stars
-  const demoStars = [
-    {name: "Demo Star 1", photoUrl: "https://ui-avatars.com/api/?name=D1&size=256&background=6a0dad&color=fff"},
-    {name: "Demo Star 2", photoUrl: "https://ui-avatars.com/api/?name=D2&size=256&background=6a0dad&color=fff"},
-    {name: "Demo Star 3", photoUrl: "https://ui-avatars.com/api/?name=D3&size=256&background=6a0dad&color=fff"}
-  ];
-  demoStars.forEach(saveStar);
+// Permanent storage: Download button added for students.json export
+  // Click download to save permanent copy. LocalStorage syncs with it.
+  const downloadBtn = document.createElement('button');
+  downloadBtn.textContent = 'Download Students (Permanent Save)';
+  downloadBtn.onclick = downloadStudents;
+  downloadBtn.className = 'download-btn';
+  starsGrid.parentNode.insertBefore(downloadBtn, starsGrid);
 
   if (addStudentTrigger) {
     addStudentTrigger.addEventListener('click', () => {
@@ -251,20 +329,57 @@ function getStars() {
 
       if (studentPhotoInput.files[0]) {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
           photoUrl = event.target.result;
-          saveStar({ name, photoUrl });
+          await saveStar({ name, photoUrl });
           studentModal.style.display = 'none';
           studentForm.reset();
         };
         reader.readAsDataURL(studentPhotoInput.files[0]);
       } else {
-        saveStar({ name, photoUrl });
-        studentModal.style.display = 'none';
-        studentForm.reset();
+        saveStar({ name, photoUrl }).then(() => {
+          studentModal.style.display = 'none';
+          studentForm.reset();
+        });
       }
     });
   }
+
+  // Student card click for full image
+  starsGrid.addEventListener('click', (e) => {
+    if (e.target.closest('.student-card')) {
+      const card = e.target.closest('.student-card');
+      const img = card.querySelector('.student-img');
+      const name = card.querySelector('.student-name')?.textContent || '';
+      
+      let lightbox = document.getElementById('imageLightbox');
+      if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.id = 'imageLightbox';
+        lightbox.className = 'image-lightbox';
+        lightbox.innerHTML = `
+          <span class="lightbox-close">&times;</span>
+          <div class="lightbox-content">
+            <img id="lightboxImg" src="" alt="">
+            <h3 id="lightboxName"></h3>
+          </div>
+        `;
+        document.body.appendChild(lightbox);
+      }
+      
+      document.getElementById('lightboxImg').src = img.src;
+      document.getElementById('lightboxName').textContent = name;
+      lightbox.style.display = 'flex';
+    }
+  });
+
+  // Lightbox close handlers
+  document.addEventListener('click', (e) => {
+    const lightbox = document.getElementById('imageLightbox');
+    if (lightbox && (e.target === lightbox || e.target.classList.contains('lightbox-close'))) {
+      lightbox.style.display = 'none';
+    }
+  });
 
   loadStars();
 });
