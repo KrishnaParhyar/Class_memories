@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="landingScreen" class="landing-screen">
+        <div class="landing-inner">
+            <div class="landing-badge">Class of 2022</div>
+            <h1>Welcome to Your Class Album</h1>
+            <p>Relive every memory, meet every star, and open the album with one click.</p>
+            <button id="enterWebsiteBtn" class="enter-btn">Enter Album</button>
+        </div>
+    </div>
+
     <nav class="navbar">
         <div class="nav-brand">Class of 2022</div>
         <ul class="nav-menu">
@@ -54,7 +63,18 @@
     </section>
 
     <footer class="footer">
-        <p>Class of 2022 Memories Album © 2024</p>
+        <div class="footer-inner">
+            <div class="footer-column">
+                <h3>Class of 2022 Album</h3>
+                <p>Keep your class memories and stars safe in one place. Click enter to open the album and relive each moment.</p>
+            </div>
+            <div class="footer-column footer-links">
+                <h4>Quick Links</h4>
+                <a href="#memories">Memories</a>
+                <a href="#stars">Class Stars</a>
+            </div>
+        </div>
+        <p class="footer-note">Made with ❤️ for the Class of 2022 • © 2026</p>
     </footer>
 
     <!-- Memory Upload Modal -->
@@ -63,12 +83,17 @@
             <span class="close-modal">&times;</span>
             <h3>📸 Add New Memory</h3>
             <form id="uploadForm">
-                <label>Year
+                <label>Semester
                     <select id="memoryYear" required>
-                        <option value="">Select Year</option>
-                        <option value="2022">2022</option>
-                        <option value="2023">2023</option>
-                        <option value="2024">2024</option>
+                        <option value="">Select Semester</option>
+                        <option value="First Sem">First Sem</option>
+                        <option value="Second Sem">Second Sem</option>
+                        <option value="Third Sem">Third Sem</option>
+                        <option value="Fourth Sem">Fourth Sem</option>
+                        <option value="Fifth Sem">Fifth Sem</option>
+                        <option value="Sixth Sem">Sixth Sem</option>
+                        <option value="Seventh Sem">Seventh Sem</option>
+                        <option value="Eighth Sem">Eighth Sem</option>
                     </select>
                 </label>
                 <label>Caption

@@ -15,50 +15,134 @@ document.addEventListener('DOMContentLoaded', function () {
   // Memories functionality
   const memoriesUploadBtn = document.querySelector('#memoriesUploadBtn');
   const uploadModal = document.getElementById('uploadModal');
-  const closeModal = document.querySelector('.close-modal');
-  const uploadForm = document.getElementById('uploadForm');
   const fileInput = document.getElementById('photoFile');
   const captionInput = document.getElementById('photoCaption');
   const yearSelect = document.getElementById('memoryYear');
-  const typeSelect = document.getElementById('memoryType');
   const fileName = document.getElementById('photoFileName');
   const memoryFolders = document.getElementById('memoryFolders');
   
-const years = ['2022', '2023', '2024', '2025', '2026'];
+  const years = ['First Sem', 'Second Sem', 'Third Sem', 'Fourth Sem', 'Fifth Sem', 'Sixth Sem', 'Seventh Sem', 'Eighth Sem'];
+  const canUseFetch = ['http:', 'https:'].includes(window.location.protocol);
+  const landingScreen = document.getElementById('landingScreen');
+  const enterWebsiteBtn = document.getElementById('enterWebsiteBtn');
+
+  if (enterWebsiteBtn && landingScreen) {
+    enterWebsiteBtn.addEventListener('click', () => {
+      landingScreen.classList.add('landing-hidden');
+      setTimeout(() => {
+        landingScreen.style.display = 'none';
+      }, 500);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  const canUseIndexedDB = 'indexedDB' in window;
+  const DB_NAME = 'ClassMemoriesDB';
+  const DB_VERSION = 1;
+
+  function openDatabase() {
+    return new Promise((resolve, reject) => {
+      if (!canUseIndexedDB) return reject(new Error('IndexedDB not supported'));
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('memories')) {
+          db.createObjectStore('memories', { autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains('stars')) {
+          db.createObjectStore('stars', { autoIncrement: true });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function getAllFromStore(storeName) {
+    if (!canUseIndexedDB) return [];
+    const db = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.getAll();
+      request.onsuccess = () => {
+        resolve(request.result || []);
+        db.close();
+      };
+      request.onerror = () => {
+        reject(request.error);
+        db.close();
+      };
+    });
+  }
+
+  async function addToStore(storeName, item) {
+    if (!canUseIndexedDB) return;
+    const db = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.add(item);
+      request.onsuccess = () => {
+        resolve(request.result);
+        db.close();
+      };
+      request.onerror = () => {
+        reject(request.error);
+        db.close();
+      };
+    });
+  }
+
+  async function clearStore(storeName) {
+    if (!canUseIndexedDB) return;
+    const db = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.clear();
+      request.onsuccess = () => {
+        resolve();
+        db.close();
+      };
+      request.onerror = () => {
+        reject(request.error);
+        db.close();
+      };
+    });
+  }
 
   async function getMemories() {
     try {
-      const response = await fetch('permanent-gallery.json');
-      const dataStr = await response.text();
-      return JSON.parse(dataStr);
-    } catch {
+      const stored = await getAllFromStore('memories');
+      if (stored.length) {
+        return stored;
+      }
+    } catch (e) {
+      console.warn('IndexedDB memories read failed:', e);
+    }
+
+    if (canUseFetch) {
       try {
-        const localData = localStorage.getItem('permanent-gallery');
-        return localData ? JSON.parse(localData) : [];
-      } catch {
-        return [];
+        const response = await fetch('permanent-gallery.json');
+        if (!response.ok) throw new Error('Fetch failed');
+        const dataStr = await response.text();
+        const memories = JSON.parse(dataStr);
+        await clearStore('memories');
+        for (const item of memories) {
+          await addToStore('memories', item);
+        }
+        return memories;
+      } catch (e) {
+        console.warn('Fetch memories failed:', e);
       }
     }
-  }
 
-  async function downloadMemories() {
-    const memories = await getMemories();
-    const dataStr = JSON.stringify(memories, null, 2);
-    const blob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `permanent-gallery-${new Date().toISOString().slice(0,10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    return [];
   }
 
   async function saveMemory(item) {
     try {
-      let memories = await getMemories();
-      memories.push(item);
-      localStorage.setItem('permanent-gallery', JSON.stringify(memories));
-      await downloadMemories();
+      await addToStore('memories', item);
     } catch(e) {
       console.warn('Save failed:', e);
     }
@@ -92,18 +176,32 @@ const years = ['2022', '2023', '2024', '2025', '2026'];
     const target = document.querySelector(`.year-media-grid[data-year="${item.year}"][data-type="${item.type}"]`);
     if (!target) return;
 
+    const handleFullscreen = (element) => {
+      if (element.requestFullscreen) {
+        element.requestFullscreen();
+      } else if (element.webkitRequestFullscreen) {
+        element.webkitRequestFullscreen();
+      } else if (element.mozRequestFullScreen) {
+        element.mozRequestFullScreen();
+      } else if (element.msRequestFullscreen) {
+        element.msRequestFullscreen();
+      }
+    };
+
     if (item.type === 'photo') {
       const img = document.createElement('img');
       img.src = item.dataUrl;
       img.alt = item.caption;
       img.className = 'memory-photo';
       img.title = item.caption;
+      img.addEventListener('click', () => handleFullscreen(img));
       target.appendChild(img);
     } else {
       const video = document.createElement('video');
       video.src = item.dataUrl;
       video.controls = true;
       video.className = 'memory-video';
+      video.addEventListener('click', () => handleFullscreen(video));
       target.appendChild(video);
     }
   }
@@ -191,13 +289,6 @@ const years = ['2022', '2023', '2024', '2025', '2026'];
   createYearFolders();
   loadMemories();
 
-  // Memories download button
-  const memoriesDownloadBtn = document.createElement('button');
-  memoriesDownloadBtn.textContent = 'Download Memories (Permanent Save)';
-  memoriesDownloadBtn.onclick = downloadMemories;
-  memoriesDownloadBtn.className = 'download-btn';
-  memoryFolders.parentNode.insertBefore(memoriesDownloadBtn, memoryFolders);
-
   // Stars functionality
   const addStudentTrigger = document.getElementById('addStudentTrigger');
   const studentModal = document.getElementById('studentModal');
@@ -208,69 +299,42 @@ const years = ['2022', '2023', '2024', '2025', '2026'];
   const studentFileName = document.getElementById('studentFileName');
   const starsGrid = document.getElementById('starsGrid');
 
-async function loadDemoIfNeeded() {
-    try {
-      const demoText = await (await fetch('stars-demo.json')).text();
-      const demo = JSON.parse(demoText);
-      try {
-        let stars = JSON.parse(localStorage.getItem('classStars') || '[]');
-        localStorage.setItem('classStars', JSON.stringify([...new Set([...demo, ...stars])].slice(-50)));
-      } catch(quota) {
-        console.warn('Quota full, skipping demo merge');
-      }
-    } catch(e) {
-      console.warn('Demo load failed', e);
-    }
-  }
-
 async function getStars() {
     try {
-      const localData = localStorage.getItem('students');
-      if (localData) return JSON.parse(localData);
-      const response = await fetch('students.json');
-      const dataStr = await response.text();
-      return JSON.parse(dataStr);
-    } catch {
-      return [];
+      const stored = await getAllFromStore('stars');
+      if (stored.length) {
+        return stored;
+      }
+    } catch (e) {
+      console.warn('IndexedDB stars read failed:', e);
     }
-  }
 
-// Removed duplicate loadDemoIfNeeded function
+    if (canUseFetch) {
+      try {
+        const response = await fetch('students.json');
+        if (!response.ok) throw new Error('Fetch failed');
+        const dataStr = await response.text();
+        const stars = JSON.parse(dataStr);
+        await clearStore('stars');
+        for (const item of stars) {
+          await addToStore('stars', item);
+        }
+        return stars;
+      } catch (e) {
+        console.warn('Fetch students failed:', e);
+      }
+    }
+
+    return [];
+  }
 
 async function saveStar(star) {
     try {
-      let stars = await getStars();  // Always load fresh from file first
-      stars.push(star);
-      // Don't use localStorage - rely on file persistence only
-      await downloadStudents();  // Auto-save to permanent students.json
+      await addToStore('stars', star);
       await loadStars();
     } catch(e) {
       console.warn('Save failed:', e);
     }
-  }
-
-async function downloadStudents() {
-    const stars = await getStars();
-    const dataStr = JSON.stringify(stars, null, 2);
-    const blob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `students-${new Date().toISOString().slice(0,10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-async function downloadStars() {
-    const stars = JSON.parse(localStorage.getItem('classStars') || '[]');
-    const dataStr = JSON.stringify(stars, null, 2);
-    const blob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `class-stars-${new Date().toISOString().slice(0,10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   function createStarCard(star) {
@@ -283,19 +347,19 @@ async function downloadStars() {
     starsGrid.appendChild(card);
   }
 
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
 async function loadStars() {
     starsGrid.innerHTML = '';
     const stars = await getStars();
-    stars.forEach(createStarCard);
+    shuffleArray(stars).forEach(createStarCard);
   }
-
-// Permanent storage: Download button added for students.json export
-  // Click download to save permanent copy. LocalStorage syncs with it.
-  const downloadBtn = document.createElement('button');
-  downloadBtn.textContent = 'Download Students (Permanent Save)';
-  downloadBtn.onclick = downloadStudents;
-  downloadBtn.className = 'download-btn';
-  starsGrid.parentNode.insertBefore(downloadBtn, starsGrid);
 
   if (addStudentTrigger) {
     addStudentTrigger.addEventListener('click', () => {
