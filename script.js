@@ -376,16 +376,12 @@ async function saveStar(star) {
     }
   }
 
-  function createStarCard(star, noteCount = 0) {
+  function createStarCard(star) {
     const card = document.createElement('div');
     card.className = 'student-card';
     card.innerHTML = `
       <img src="${star.photoUrl}" alt="${star.name}" class="student-img">
       <h3 class="student-name">${star.name}</h3>
-      <div class="student-meta">
-        <span class="note-count">${noteCount} anonymous note${noteCount === 1 ? '' : 's'}</span>
-        <button type="button" class="note-button" data-recipient="${star.name}">✉️ Leave anonymous note</button>
-      </div>
     `;
     starsGrid.appendChild(card);
   }
@@ -401,12 +397,7 @@ async function saveStar(star) {
 async function loadStars() {
     starsGrid.innerHTML = '';
     const stars = await getStars();
-    const notes = await getAllFromStore('notes');
-    const noteCounts = notes.reduce((acc, note) => {
-      acc[note.recipient] = (acc[note.recipient] || 0) + 1;
-      return acc;
-    }, {});
-    shuffleArray(stars).forEach(star => createStarCard(star, noteCounts[star.name] || 0));
+    shuffleArray(stars).forEach(createStarCard);
   }
 
   if (addStudentTrigger) {

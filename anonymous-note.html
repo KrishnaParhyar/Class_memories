@@ -44,6 +44,7 @@
                 <button type="submit" class="submit-btn">Create Anonymous Note</button>
             </form>
             <div id="noteOutput" class="note-output" style="display:none;"></div>
+            <div id="allNotes" class="all-notes"></div>
             <p style="margin-top: 2rem; color: #5e5e5e; text-align: center;">Note: The note is anonymous, so only the recipient name appears, not the sender.</p>
         </div>
     </section>
@@ -71,12 +72,61 @@
             const recipientInput = document.getElementById('recipientName');
             const noteInput = document.getElementById('noteBody');
 
+            function getStoredNotes() {
+                return JSON.parse(localStorage.getItem('anonymousNotes') || '[]');
+            }
+
+            function saveStoredNote(note) {
+                const notes = getStoredNotes();
+                notes.push(note);
+                localStorage.setItem('anonymousNotes', JSON.stringify(notes));
+            }
+
+            function renderAllNotes() {
+                const notes = getStoredNotes();
+                const allNotesEl = document.getElementById('allNotes');
+                if (!allNotesEl) return;
+
+                if (!notes.length) {
+                    allNotesEl.innerHTML = '<p style="color: #5e5e5e;">No anonymous notes yet. Write one to start.</p>';
+                    return;
+                }
+
+                const grouped = notes.reduce((acc, note) => {
+                    const recipient = note.recipient || 'Unknown';
+                    if (!acc[recipient]) acc[recipient] = [];
+                    acc[recipient].push(note);
+                    return acc;
+                }, {});
+
+                allNotesEl.innerHTML = Object.keys(grouped).map(recipient => {
+                    const items = grouped[recipient].map(note => `
+                        <div class="recipient-note">
+                            <p>${note.text.replace(/\n/g, '<br>')}</p>
+                            <span>${new Date(note.createdAt).toLocaleString()}</span>
+                        </div>
+                    `).join('');
+                    return `
+                        <div class="recipient-section">
+                            <h3 class="note-recipient-title">Notes for ${recipient} (${grouped[recipient].length})</h3>
+                            ${items}
+                        </div>
+                    `;
+                }).join('');
+            }
+
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const recipient = recipientInput.value.trim();
                 const text = noteInput.value.trim();
                 if (!recipient || !text) return;
                 const finalText = text;
+                const note = {
+                    recipient,
+                    text: finalText,
+                    createdAt: new Date().toISOString()
+                };
+                saveStoredNote(note);
                 output.innerHTML = `
                     <div class="note-box">
                         <h3>Anonymous note preview for ${recipient}</h3>
@@ -85,7 +135,10 @@
                 `;
                 output.style.display = 'block';
                 form.reset();
+                renderAllNotes();
             });
+
+            renderAllNotes();
         });
     </script>
 </body>
