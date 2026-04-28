@@ -626,6 +626,129 @@ body {
   border-color: #6a0dad;
 }
 
+.note-modal textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+.note-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: linear-gradient(135deg, #ffc107, #ff5722);
+  border: none;
+  border-radius: 999px;
+  color: #240b36;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(255,87,34,0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.note-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(255,87,34,0.35);
+}
+
+.note-count {
+  display: inline-block;
+  margin-bottom: 0.8rem;
+  color: #6a0dad;
+  font-weight: 700;
+}
+
+.student-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.admin-link {
+  display: inline-block;
+  color: rgba(244,244,255,0.88);
+  text-decoration: none;
+  padding: 0.25rem 0;
+}
+
+.admin-link:hover {
+  color: #ffd54f;
+}
+
+.note-modal, .admin-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.note-modal-content, .admin-modal-content {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  max-width: 540px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  position: relative;
+  animation: modalSlideIn 0.3s ease;
+}
+
+.admin-notes-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.admin-note-item {
+  border: 1px solid rgba(106,13,173,0.15);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  background: #f9f5ff;
+}
+
+.admin-note-item h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: #240b36;
+}
+
+.admin-note-item p {
+  margin: 0.5rem 0 0.75rem;
+  color: #333;
+  line-height: 1.7;
+}
+
+.delete-note-btn {
+  background: #d32f2f;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.delete-note-btn:hover {
+  background: #b71c1c;
+}
+
+#noteRecipient {
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
 .submit-btn {
   background: linear-gradient(135deg, #6a0dad, #8b5cf6);
   color: white;
@@ -757,6 +880,69 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Note page */
+.note-page {
+  padding: 120px 0 100px;
+  background: linear-gradient(135deg, #f6f0ff 0%, #ffffff 100%);
+}
+
+.note-form {
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.note-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.note-form input,
+.note-form textarea {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid #e6dff9;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+.note-box {
+  background: #fff6ea;
+  border: 1px solid #ffddb3;
+  padding: 2rem;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(255,189,94,0.18);
+}
+
+.note-box h3 {
+  margin-top: 0;
+  color: #6a0dad;
+}
+
+.note-box p {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  color: #3a2540;
+}
+
+.note-hero {
+  min-height: 50vh;
+}
+
+.note-page .section-header h2 {
+  font-size: 2.8rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #6a0dad;
 }
 
 /* Responsive */

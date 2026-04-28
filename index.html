@@ -23,6 +23,7 @@
         <ul class="nav-menu">
             <li><a href="#memories">📸 Memories</a></li>
             <li><a href="#stars">⭐ Stars</a></li>
+            <li><a href="anonymous-note.html">✉️ Anonymous Note</a></li>
         </ul>
     </nav>
 
@@ -74,6 +75,8 @@
                 <h4>Quick Links</h4>
                 <a href="#memories">Memories</a>
                 <a href="#stars">Class Stars</a>
+                <a href="anonymous-note.html">Anonymous Note</a>
+                <a href="#" id="adminAccessLink" class="admin-link">Admin</a>
             </div>
         </div>
         <p class="footer-note">Made with ❤️ by Krishna for the whole class • © 2026</p>
@@ -126,6 +129,31 @@
                 <button type="submit" class="submit-btn">Add Star ✨</button>
             </form>
         </div>
+    </div>
+
+    <!-- Anonymous Note Modal -->
+    <div id="noteModal" class="note-modal" style="display:none;">
+      <div class="note-modal-content">
+        <span class="close-note-modal">&times;</span>
+        <h3>Write Anonymous Note</h3>
+        <p id="noteRecipient">To: </p>
+        <form id="noteForm">
+          <label>Your note
+            <textarea id="noteText" rows="5" placeholder="Write something encouraging..." required></textarea>
+          </label>
+          <button type="submit" class="submit-btn">Send Note</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Notes Panel -->
+    <div id="adminModal" class="admin-modal" style="display:none;">
+      <div class="admin-modal-content">
+        <span class="close-admin-modal">&times;</span>
+        <h3>Anonymous Notes Admin</h3>
+        <p>Enter admin passcode to remove notes.</p>
+        <div id="adminNotesList" class="admin-notes-list"></div>
+      </div>
     </div>
 
     <script src="script.js"></script>

@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   const canUseIndexedDB = 'indexedDB' in window;
   const DB_NAME = 'ClassMemoriesDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
 
   function openDatabase() {
     return new Promise((resolve, reject) => {
@@ -50,6 +50,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (!db.objectStoreNames.contains('stars')) {
           db.createObjectStore('stars', { autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains('notes')) {
+          db.createObjectStore('notes', { keyPath: 'id', autoIncrement: true });
         }
       };
       request.onsuccess = () => resolve(request.result);
@@ -66,6 +69,32 @@ document.addEventListener('DOMContentLoaded', function () {
       const request = store.getAll();
       request.onsuccess = () => {
         resolve(request.result || []);
+        db.close();
+      };
+      request.onerror = () => {
+        reject(request.error);
+        db.close();
+      };
+    });
+  }
+
+  async function saveNote(note) {
+    try {
+      await addToStore('notes', note);
+    } catch (e) {
+      console.warn('Save note failed:', e);
+    }
+  }
+
+  async function deleteNote(id) {
+    if (!canUseIndexedDB) return;
+    const db = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('notes', 'readwrite');
+      const store = transaction.objectStore('notes');
+      const request = store.delete(id);
+      request.onsuccess = () => {
+        resolve();
         db.close();
       };
       request.onerror = () => {
@@ -298,6 +327,16 @@ document.addEventListener('DOMContentLoaded', function () {
   const studentPhotoInput = document.getElementById('studentPhoto');
   const studentFileName = document.getElementById('studentFileName');
   const starsGrid = document.getElementById('starsGrid');
+  const noteModal = document.getElementById('noteModal');
+  const closeNoteModal = document.querySelector('.close-note-modal');
+  const noteForm = document.getElementById('noteForm');
+  const noteRecipientLabel = document.getElementById('noteRecipient');
+  const noteText = document.getElementById('noteText');
+  const adminAccessLink = document.getElementById('adminAccessLink');
+  const adminModal = document.getElementById('adminModal');
+  const closeAdminModal = document.querySelector('.close-admin-modal');
+  const adminNotesList = document.getElementById('adminNotesList');
+  let activeNoteRecipient = null;
 
 async function getStars() {
     try {
@@ -337,12 +376,16 @@ async function saveStar(star) {
     }
   }
 
-  function createStarCard(star) {
+  function createStarCard(star, noteCount = 0) {
     const card = document.createElement('div');
     card.className = 'student-card';
     card.innerHTML = `
       <img src="${star.photoUrl}" alt="${star.name}" class="student-img">
       <h3 class="student-name">${star.name}</h3>
+      <div class="student-meta">
+        <span class="note-count">${noteCount} anonymous note${noteCount === 1 ? '' : 's'}</span>
+        <button type="button" class="note-button" data-recipient="${star.name}">✉️ Leave anonymous note</button>
+      </div>
     `;
     starsGrid.appendChild(card);
   }
@@ -358,7 +401,12 @@ async function saveStar(star) {
 async function loadStars() {
     starsGrid.innerHTML = '';
     const stars = await getStars();
-    shuffleArray(stars).forEach(createStarCard);
+    const notes = await getAllFromStore('notes');
+    const noteCounts = notes.reduce((acc, note) => {
+      acc[note.recipient] = (acc[note.recipient] || 0) + 1;
+      return acc;
+    }, {});
+    shuffleArray(stars).forEach(star => createStarCard(star, noteCounts[star.name] || 0));
   }
 
   if (addStudentTrigger) {
@@ -409,8 +457,22 @@ async function loadStars() {
     });
   }
 
-  // Student card click for full image
+  // Student card and note button click handling
   starsGrid.addEventListener('click', (e) => {
+    const noteBtn = e.target.closest('.note-button');
+    if (noteBtn) {
+      e.preventDefault();
+      activeNoteRecipient = noteBtn.getAttribute('data-recipient');
+      if (noteRecipientLabel) {
+        noteRecipientLabel.textContent = `To: ${activeNoteRecipient}`;
+      }
+      if (noteModal) {
+        noteText.value = '';
+        noteModal.style.display = 'flex';
+      }
+      return;
+    }
+
     if (e.target.closest('.student-card')) {
       const card = e.target.closest('.student-card');
       const img = card.querySelector('.student-img');
@@ -444,6 +506,84 @@ async function loadStars() {
       lightbox.style.display = 'none';
     }
   });
+
+  if (noteForm) {
+    noteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const noteTextValue = noteText.value.trim();
+      if (!noteTextValue || !activeNoteRecipient) return;
+      await saveNote({ recipient: activeNoteRecipient, text: noteTextValue, createdAt: new Date().toISOString() });
+      noteModal.style.display = 'none';
+      activeNoteRecipient = null;
+      if (noteForm) noteForm.reset();
+      await loadStars();
+    });
+  }
+
+  if (closeNoteModal) {
+    closeNoteModal.addEventListener('click', () => {
+      if (noteModal) noteModal.style.display = 'none';
+    });
+  }
+
+  if (noteModal) {
+    noteModal.addEventListener('click', (e) => {
+      if (e.target === noteModal) noteModal.style.display = 'none';
+    });
+  }
+
+  async function renderAdminNotes() {
+    if (!adminNotesList) return;
+    const notes = await getAllFromStore('notes');
+    adminNotesList.innerHTML = notes.length ? notes.map(note => `
+      <div class="admin-note-item">
+        <div><strong>${note.recipient}</strong> • ${new Date(note.createdAt).toLocaleString()}</div>
+        <p>${note.text}</p>
+        <button class="delete-note-btn" data-id="${note.id}">Delete</button>
+      </div>
+    `).join('') : '<p>No anonymous notes yet.</p>';
+  }
+
+  if (adminNotesList) {
+    adminNotesList.addEventListener('click', async (e) => {
+      const button = e.target.closest('.delete-note-btn');
+      if (!button) return;
+      const id = Number(button.getAttribute('data-id'));
+      if (!Number.isFinite(id)) return;
+      await deleteNote(id);
+      await renderAdminNotes();
+      await loadStars();
+    });
+  }
+
+  async function requestAdminAccess() {
+    const passcode = prompt('Enter admin passcode to manage anonymous notes:');
+    if (passcode === 'krishna') {
+      if (adminModal) adminModal.style.display = 'flex';
+      await renderAdminNotes();
+    } else if (passcode !== null) {
+      alert('Passcode incorrect.');
+    }
+  }
+
+  if (adminAccessLink) {
+    adminAccessLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      requestAdminAccess();
+    });
+  }
+
+  if (closeAdminModal) {
+    closeAdminModal.addEventListener('click', () => {
+      if (adminModal) adminModal.style.display = 'none';
+    });
+  }
+
+  if (adminModal) {
+    adminModal.addEventListener('click', (e) => {
+      if (e.target === adminModal) adminModal.style.display = 'none';
+    });
+  }
 
   loadStars();
 });

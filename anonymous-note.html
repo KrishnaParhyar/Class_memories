@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonymous Note for Classmate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">Class of 2022</div>
+        <ul class="nav-menu">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#stars">Class Stars</a></li>
+            <li><a href="anonymous-note.html">Anonymous Note</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero note-hero">
+        <video autoplay muted loop playsinline class="hero-video">
+            <source src="video.mp4" type="video/mp4">
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="hero-credit">Write an anonymous message</div>
+            <h1>Anonymous Note Page</h1>
+            <p>Anyone can write an anonymous note for a classmate without adding any extra text automatically.</p>
+        </div>
+    </section>
+
+    <section class="note-page">
+        <div class="container">
+            <div class="section-header">
+                <h2>Write an anonymous note</h2>
+            </div>
+            <form id="anonNoteForm" class="note-form">
+                <label>Recipient name
+                    <input type="text" id="recipientName" placeholder="Type classmate name" required>
+                </label>
+                <label>Your message
+                    <textarea id="noteBody" placeholder="Write anything here..." required></textarea>
+                </label>
+                <button type="submit" class="submit-btn">Create Anonymous Note</button>
+            </form>
+            <div id="noteOutput" class="note-output" style="display:none;"></div>
+            <p style="margin-top: 2rem; color: #5e5e5e; text-align: center;">Note: The note is anonymous, so only the recipient name appears, not the sender.</p>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-column">
+                <h3>Class of 2022 Album</h3>
+                <p>Keep your class memories and stars safe in one place. Use the anonymous note page to send a message for your friend.</p>
+            </div>
+            <div class="footer-column footer-links">
+                <h4>Quick Links</h4>
+                <a href="index.html">Home</a>
+                <a href="index.html#stars">Class Stars</a>
+                <a href="anonymous-note.html">Anonymous Note</a>
+            </div>
+        </div>
+        <p class="footer-note">Made with ❤️ by Krishna for the whole class • © 2026</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('anonNoteForm');
+            const output = document.getElementById('noteOutput');
+            const recipientInput = document.getElementById('recipientName');
+            const noteInput = document.getElementById('noteBody');
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const recipient = recipientInput.value.trim();
+                const text = noteInput.value.trim();
+                if (!recipient || !text) return;
+                const finalText = text;
+                output.innerHTML = `
+                    <div class="note-box">
+                        <h3>Anonymous note preview for ${recipient}</h3>
+                        <p>${finalText.replace(/\n/g, '<br>')}</p>
+                    </div>
+                `;
+                output.style.display = 'block';
+                form.reset();
+            });
+        });
+    </script>
+</body>
+</html>
