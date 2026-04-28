@@ -934,6 +934,44 @@ body {
   color: #3a2540;
 }
 
+.all-notes {
+  margin-top: 2rem;
+}
+
+.recipient-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f7f0ff;
+  border-radius: 20px;
+  border: 1px solid rgba(106,13,173,0.15);
+}
+
+.note-recipient-title {
+  margin: 0 0 1rem;
+  color: #4b0d84;
+  font-size: 1.4rem;
+}
+
+.recipient-note {
+  background: white;
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(106,13,173,0.1);
+}
+
+.recipient-note p {
+  margin: 0 0 0.75rem;
+  color: #333;
+  line-height: 1.7;
+}
+
+.recipient-note span {
+  display: block;
+  color: #6a0dad;
+  font-size: 0.95rem;
+}
+
 .note-hero {
   min-height: 50vh;
 }
