@@ -65,6 +65,19 @@ body {
   font-size: 0.95rem;
 }
 
+.creator-badge {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1.7rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffd54f, #ff6b6b);
+  color: #240b36;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-size: 1rem;
+  box-shadow: 0 14px 30px rgba(255,107,107,0.25);
+}
+
 .landing-inner h1 {
   font-size: clamp(2.8rem, 6vw, 4.8rem);
   margin: 1rem 0 1rem;
@@ -262,6 +275,20 @@ body {
   opacity: 0;
   transform: translateY(30px);
   animation: fadeInUp 0.9s ease-out 0.3s forwards;
+}
+
+.hero-credit {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 1rem;
+  text-transform: uppercase;
+  box-shadow: 0 10px 25px rgba(255,255,255,0.1);
 }
 
 .hero h1 {
